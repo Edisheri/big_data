@@ -1,0 +1,82 @@
+version: '3.7'
+
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    ports:
+      - "9870:9870"   # WebUI NameNode (Hadoop 3.x)
+      - "9000:9000"   # FS Default Port
+      - "8020:8020"   # Remote IPC
+    volumes:
+      - namenode-data:/hadoop/dfs/name
+      - ./lab2-data:/lab2-data
+    environment:
+      - CLUSTER_NAME=hadoop-cluster
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+    env_file:
+      - config.env
+
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+    depends_on:
+      - namenode
+    ports:
+      - "8088:8088"   # YARN WebUI
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+    env_file:
+      - config.env
+
+  worker1:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    depends_on:
+      - namenode
+      - resourcemanager
+    volumes:
+      - datanode1-data:/hadoop/dfs/data
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - SERVICE_PRECONDITION=namenode:9870 resourcemanager:8088
+
+  worker2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: worker2
+    hostname: worker2
+    depends_on:
+      - namenode
+      - resourcemanager
+    volumes:
+      - datanode2-data:/hadoop/dfs/data
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - SERVICE_PRECONDITION=namenode:9870 resourcemanager:8088
+
+  worker3:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: worker3
+    hostname: worker3
+    depends_on:
+      - namenode
+      - resourcemanager
+    volumes:
+      - datanode3-data:/hadoop/dfs/data
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - SERVICE_PRECONDITION=namenode:9870 resourcemanager:8088
+
+  historyserver:
+    image: bde2020/hadoop-historyserver:2.0.0-hadoop3.2.1-java8
+    container_name: historyserver
+    depends_on:
+      - namenode
+      - resourcemanager
+    ports:
+      - "8188:8188"   # HistoryServer UI
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+
+volumes:
+  namenode-data:
+  datanode1-data:
+  datanode2-data:
+  datanode3-data:

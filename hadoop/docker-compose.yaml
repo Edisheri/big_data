@@ -1,0 +1,95 @@
+version: "3"
+
+services:
+  namenode:
+    image: apache/hadoop:3
+    hostname: namenode
+    ports:
+      - "9870:9870"
+    env_file:
+      - hadoop.env
+    environment:
+      ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
+    volumes:
+      - ./share:/share
+    command: [ "hdfs", "namenode" ]
+  datanode1:
+    image: apache/hadoop:3
+    command: [ "hdfs", "datanode" ]
+    env_file:
+      - hadoop.env
+    volumes:
+      - ./datanode1:/hadoop/dfs/data
+  datanode2:
+    image: apache/hadoop:3
+    command: [ "hdfs", "datanode" ]
+    env_file:
+      - hadoop.env
+    volumes:
+      - ./datanode2:/hadoop/dfs/data
+  datanode3:
+    image: apache/hadoop:3
+    command: [ "hdfs", "datanode" ]
+    env_file:
+      - hadoop.env
+    volumes:
+      - ./datanode3:/hadoop/dfs/data
+  resourcemanager:
+    image: apache/hadoop:3
+    hostname: resourcemanager
+    command: [ "yarn", "resourcemanager" ]
+    ports:
+      - "8088:8088"
+    env_file:
+      - hadoop.env
+  nodemanager1:
+    image: apache/hadoop:3
+    command: [ "yarn", "nodemanager" ]
+    env_file:
+      - hadoop.env
+  nodemanager2:
+    image: apache/hadoop:3
+    command: [ "yarn", "nodemanager" ]
+    env_file:
+      - hadoop.env
+  nodemanager3:
+    image: apache/hadoop:3
+    command: [ "yarn", "nodemanager" ]
+    env_file:
+      - hadoop.env
+
+# Spark
+  spark-master:
+    image: bitnami/spark:3.5.0
+    hostname: spark-master
+    ports:
+      - "8080:8080"   # Spark UI
+      - "7077:7077"   # Master port
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENABLED=no
+      - SPARK_MASTER_HOST=spark-master
+    depends_on:
+      - namenode
+      - resourcemanager
+
+  spark-worker1:
+    image: bitnami/spark:3.5.0
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=2g
+    depends_on:
+      - spark-master
+
+  spark-worker2:
+    image: bitnami/spark:3.5.0
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=2g
+    depends_on:
+      - spark-master
